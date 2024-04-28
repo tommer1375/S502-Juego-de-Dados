@@ -1,0 +1,60 @@
+package cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.model.services;
+
+
+import cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.model.domain.Player;
+import cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.model.dto.PlayerDTO;
+import cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.exceptions.*;
+import cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.model.repository.PlayerRepository;
+import cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.model.repository.GameRepository;
+import cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.model.services.GameRankingService;
+import cat.itacademy.barcelonactiva.monzo.jorge.s05.t02.n02.model.utils.PlayerConverter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
+import java.util.List;
+
+
+    @Service
+    public class GameRankingServiceImpl implements GameRankingService {
+        @Autowired
+        private PlayerRepository playerRepository;
+        @Autowired
+        private GameRepository gameRepository;
+
+        @Transactional
+        @Override
+        public double getAveragePlayer() {
+            List<Player> players = playerRepository.findAll();
+            if (players.isEmpty()) {
+                throw new PlayerNotFound("Players not found in the system.");
+            }
+
+            return players.stream()
+                    .mapToDouble(Player::calculateSuccessRate)
+                    .average().orElse(0.0);
+        }
+
+        @Override
+        public PlayerDTO getWinnerPlayer() {
+            List<Player> players = playerRepository.findAll();
+            if (players.isEmpty()) {
+                throw new PlayerNotFound("Not players found.");
+            }
+            Player winner = players.stream().max(Comparator.comparing(Player::calculateSuccessRate))
+                    .orElse(null);
+            return PlayerConverter.EntitytoDTO(winner);
+        }
+
+        @Override
+        public PlayerDTO getLoserPlayer() {
+            List<Player> players = playerRepository.findAll();
+            if (players.isEmpty()) {
+                throw new PlayerNotFound("Not players found.");
+            }
+            Player loser = players.stream().min(Comparator.comparing(Player::calculateSuccessRate))
+                    .orElse(null);
+            return PlayerConverter.EntitytoDTO(loser);
+        }
+    }
